@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FineDeal - Price Comparison</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>
+        <span class="header-icon">💰</span>
+        FineDeal
+      </h1>
+      <p class="subtitle">Smart Price Comparison</p>
+    </header>
+
+    <!-- Current Product Section -->
+    <section id="current-product" class="product-section">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Analyzing product...</p>
+      </div>
+    </section>
+
+    <!-- Compare Button -->
+    <button id="compare-btn" class="btn-primary" disabled>
+      <span class="btn-icon">🔍</span>
+      Compare Prices
+    </button>
+
+    <!-- Quick Stats (shown after comparison) -->
+    <div id="stats-section" class="stats-section hidden">
+      <div class="stat-card">
+        <div class="stat-value" id="best-deal">-</div>
+        <div class="stat-label">Best Deal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-savings">-</div>
+        <div class="stat-label">You Save</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sites-searched">-</div>
+        <div class="stat-label">Sites Checked</div>
+      </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div id="progress-section" class="progress-section hidden">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p id="progress-text" class="progress-text">Searching...</p>
+    </div>
+
+    <!-- Results Section -->
+    <section id="results-section" class="results-section">
+      <!-- Results will be inserted here -->
+    </section>
+
+    <!-- Footer with Clear Cache -->
+    <footer class="footer">
+      <button id="clear-cache-btn" class="btn-clear-cache" title="Clear cached results">
+        🗑️ Clear Cache
+      </button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

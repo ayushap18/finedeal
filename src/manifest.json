@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "FineDeal - Smart Price Comparison",
+  "version": "1.0.0",
+  "description": "Production-level price comparison across 9 e-commerce sites with AI-powered matching",
+  "author": "FineDeal Team",
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "FineDeal - Compare Prices"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.amazon.in/*",
+        "https://www.flipkart.com/*",
+        "https://www.myntra.com/*",
+        "https://www.snapdeal.com/*",
+        "https://www.tatacliq.com/*",
+        "https://www.ajio.com/*",
+        "https://www.nykaa.com/*",
+        "https://www.croma.com/*",
+        "https://www.vijaysales.com/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.amazon.in/*",
+    "https://www.flipkart.com/*",
+    "https://www.myntra.com/*",
+    "https://www.snapdeal.com/*",
+    "https://www.tatacliq.com/*",
+    "https://www.ajio.com/*",
+    "https://www.nykaa.com/*",
+    "https://www.croma.com/*",
+    "https://www.vijaysales.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

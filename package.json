@@ -1,0 +1,79 @@
+{
+  "name": "finedeal",
+  "version": "1.0.0",
+  "description": "Production-level price comparison browser extension with AI-powered matching",
+  "author": "FineDeal Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "package": "npm run build && cd dist && zip -r ../finedeal-v1.0.0.zip .",
+    "analyze": "webpack-bundle-analyzer dist/stats.json"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "@types/jest": "^29.5.8",
+    "@types/node": "^20.9.0",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
+    "@typescript-eslint/parser": "^6.11.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "html-webpack-plugin": "^5.5.3",
+    "jest": "^29.7.0",
+    "mini-css-extract-plugin": "^2.7.6",
+    "prettier": "^3.1.0",
+    "style-loader": "^3.3.3",
+    "ts-jest": "^29.1.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.2.2",
+    "webpack": "^5.89.0",
+    "webpack-bundle-analyzer": "^4.10.1",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "fuzzball": "^2.1.2",
+    "lodash.debounce": "^4.0.8",
+    "lru-cache": "^10.0.1"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "jsdom",
+    "roots": ["<rootDir>/tests"],
+    "testMatch": ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/types/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
