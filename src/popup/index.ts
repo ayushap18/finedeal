@@ -2,6 +2,7 @@ import './popup.css';
 import { Product, MatchResult, ChromeMessage } from '@/types';
 import { SITE_CONFIGS, getEnabledSites } from '@/config/sites';
 import { productMatcher } from '@/services/matcher';
+import { smartMatcher } from '@/services/smart-matcher'; // NEW: Smart matching logic
 import { generateSearchQuery, generateSearchQueries, formatPrice, calculatePriceDiff } from '@/utils/product';
 import { withTimeout } from '@/utils/helpers';
 import { smartCache } from '@/utils/cache';
@@ -198,18 +199,26 @@ async function startComparison(product: Product) {
   // OPTIMIZATION: Deduplicate BEFORE matching (removes color variants early)
   const deduplicatedProducts = deduplicateProducts(allProducts);
 
-  // Match products with fallback to similar products
+  // Match products with NEW SMART MATCHER (v4.0)
   const allMatches: MatchResult[] = [];
 
   if (deduplicatedProducts.length > 0) {
     try {
-      const matches = await productMatcher.findMatches(product, deduplicatedProducts);
+      // USE SMART MATCHER: Multi-factor weighted scoring system
+      const matches = await smartMatcher.findMatches(product, deduplicatedProducts);
       allMatches.push(...matches);
 
-      // FALLBACK: If no exact matches, show similar products from same brand/category
+      // FALLBACK: If no matches with smart matcher, try old matcher
       if (allMatches.length === 0) {
-        const similarMatches = await productMatcher.findSimilarProducts(product, deduplicatedProducts);
-        allMatches.push(...similarMatches);
+        logger.info('🔄 Smart matcher found no results, trying fallback matcher...');
+        const fallbackMatches = await productMatcher.findMatches(product, deduplicatedProducts);
+        allMatches.push(...fallbackMatches);
+        
+        // Last resort: similar products
+        if (allMatches.length === 0) {
+          const similarMatches = await productMatcher.findSimilarProducts(product, deduplicatedProducts);
+          allMatches.push(...similarMatches);
+        }
       }
 
       // FINAL DEDUPLICATION: Keep only cheapest variant per site (safety net)
