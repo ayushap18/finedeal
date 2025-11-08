@@ -9,7 +9,7 @@ import logger from '@/utils/logger';
  * Uses multiple algorithms: exact matching, fuzzy matching, ML-inspired scoring
  */
 export class ProductMatcher {
-  private readonly MIN_CONFIDENCE = 60; // RAISED from 25 to 60 for stricter filtering
+  private readonly MIN_CONFIDENCE = 85; // RAISED to 85 for much stricter filtering - no cross-category matches
   private readonly ACCESSORY_KEYWORDS = [
     'case', 'cover', 'charger', 'cable', 'adapter', 'holder', 'stand',
     'protector', 'screen guard', 'tempered glass', 'skin', 'pouch',
@@ -348,32 +348,51 @@ export class ProductMatcher {
   private filterAccessories(source: Product, candidates: Product[]): Product[] {
     const sourceIsAccessory = this.isAccessory(source.title);
     const sourceCategory = source.category;
+    const sourceTitleLower = source.title.toLowerCase();
 
-    // Be lenient - only filter obvious accessories and wrong categories
+    // STRICT CATEGORY FILTERING - Block ALL cross-category matches
     return candidates.filter((c) => {
       if (sourceIsAccessory) return true; // If source is accessory, show all accessories
       
       const isAccessory = this.isAccessory(c.title);
+      const candidateTitleLower = c.title.toLowerCase();
       
-      // CATEGORY MISMATCH: Don't show laptops when looking for GPUs or vice versa
-      if (sourceCategory === 'electronics-laptop' && c.category === 'electronics-gpu') {
-        return false; // Don't show graphics cards for laptop searches
-      }
-      if (sourceCategory === 'electronics-gpu' && c.category === 'electronics-laptop') {
-        return false; // Don't show laptops for GPU searches
-      }
-      if (sourceCategory === 'electronics-phone' && c.category === 'electronics-laptop') {
-        return false; // Don't show laptops for phone searches
-      }
-      if (sourceCategory === 'electronics-laptop' && c.category === 'electronics-phone') {
-        return false; // Don't show phones for laptop searches
+      // STRICT: Block ALL laptop/phone/tablet/GPU cross-matches
+      const sourceIsLaptop = sourceCategory === 'electronics-laptop' || /laptop|notebook/i.test(sourceTitleLower);
+      const sourceIsPhone = sourceCategory === 'electronics-phone' || /phone|mobile|smartphone/i.test(sourceTitleLower);
+      const sourceIsTablet = sourceCategory === 'electronics-tablet' || /tablet|ipad/i.test(sourceTitleLower);
+      const sourceIsGPU = sourceCategory === 'electronics-gpu' || /graphics card|gpu|geforce|radeon/i.test(sourceTitleLower);
+      
+      const candidateIsLaptop = c.category === 'electronics-laptop' || /laptop|notebook/i.test(candidateTitleLower);
+      const candidateIsPhone = c.category === 'electronics-phone' || /phone|mobile|smartphone/i.test(candidateTitleLower);
+      const candidateIsTablet = c.category === 'electronics-tablet' || /tablet|ipad/i.test(candidateTitleLower);
+      const candidateIsGPU = c.category === 'electronics-gpu' || /graphics card|gpu|geforce|radeon/i.test(candidateTitleLower);
+      
+      // BLOCK: Laptop should NEVER match Phone, Tablet, or GPU
+      if (sourceIsLaptop && (candidateIsPhone || candidateIsTablet || candidateIsGPU)) {
+        logger.debug(`Blocking: Laptop source vs ${c.category} candidate`);
+        return false;
       }
       
-      // Don't filter if title has phone/laptop keywords even with accessory words
-      if (/(phone|mobile|smartphone|laptop|tablet|watch|speaker)/i.test(c.title.toLowerCase())) {
-        return true;
+      // BLOCK: Phone should NEVER match Laptop, Tablet, or GPU
+      if (sourceIsPhone && (candidateIsLaptop || candidateIsTablet || candidateIsGPU)) {
+        logger.debug(`Blocking: Phone source vs ${c.category} candidate`);
+        return false;
       }
       
+      // BLOCK: Tablet should NEVER match Laptop, Phone, or GPU
+      if (sourceIsTablet && (candidateIsLaptop || candidateIsPhone || candidateIsGPU)) {
+        logger.debug(`Blocking: Tablet source vs ${c.category} candidate`);
+        return false;
+      }
+      
+      // BLOCK: GPU should NEVER match Laptop, Phone, or Tablet
+      if (sourceIsGPU && (candidateIsLaptop || candidateIsPhone || candidateIsTablet)) {
+        logger.debug(`Blocking: GPU source vs ${c.category} candidate`);
+        return false;
+      }
+      
+      // Filter out accessories
       return !isAccessory;
     });
   }
