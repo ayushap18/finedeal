@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FineDeal - Smart Price Comparison",
-  "version": "3.1.1",
-  "description": "Advanced price comparison with product number matching and availability filtering across 9 e-commerce sites",
+  "version": "4.0.0",
+  "description": "Smart Matcher v4.0 with multi-factor weighted scoring and semantic analysis across 9 e-commerce sites",
   "author": "FineDeal Team",
   "icons": {
     "16": "assets/icon-16.png",

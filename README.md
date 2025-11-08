@@ -1,9 +1,9 @@
-# 🛍️ FineDeal v3.1.0 - Smart Price Comparison Extension
+# 🛍️ FineDeal v4.0.0 - Smart Price Comparison Extension
 
-> Compare prices across 8+ major Indian e-commerce sites instantly with **Advanced Product Listing Technology**, intelligent matching, and automatic availability filtering.
+> Compare prices across 8+ major Indian e-commerce sites instantly with **Smart Matcher v4.0**, multi-factor weighted scoring, and semantic similarity analysis.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-3.1.0-blue)]()
+[![Version](https://img.shields.io/badge/version-4.0.0-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
 ---
@@ -11,7 +11,7 @@
 ## 📖 Table of Contents
 
 - [Features](#-features)
-- [What's New in v3.1](#-whats-new-in-v31)
+- [What's New in v4.0](#-whats-new-in-v40)
 - [Quick Start](#-quick-start)
 - [How It Works](#-how-it-works)
 - [Supported Sites](#-supported-sites)
@@ -28,19 +28,51 @@
 
 ### 🎯 Core Features
 - ✅ **Multi-Site Comparison** - Search 8 major e-commerce sites simultaneously
-- ✅ **Advanced Product Listing** - Prioritizes SKU/model number matching (NEW! 🆕)
-- ✅ **Availability Filtering** - Only shows in-stock products (NEW! 🆕)
+- ✅ **Smart Matcher v4.0** - Multi-factor weighted scoring system (NEW! 🆕)
+- ✅ **Semantic Analysis** - Token-based with n-grams (bigrams & trigrams) (NEW! 🆕)
+- ✅ **Availability Filtering** - Only shows in-stock products
 - ✅ **Multi-Query Fallback** - 7+ different search strategies per site
-- ✅ **Product Number Priority** - 99% confidence matching with SKU/ASIN (NEW! 🆕)
+- ✅ **Product Number Priority** - 99% confidence matching with SKU/ASIN
 - ✅ **Similar Products** - Shows alternatives when exact match not found
 - ✅ **Smart Deduplication** - Removes duplicate color variants, keeps cheapest
 - ✅ **Speed Optimized** - Results in 3-4 seconds (2-3s with product numbers!)
-- ✅ **Confidence Scoring** - 25-100% match confidence with detailed reasoning
+- ✅ **Confidence Scoring** - 70-100% match confidence with detailed reasoning
 - ✅ **Category-Aware** - Different matching logic for electronics, fashion, beauty
 
-### 🚀 Advanced Features (v3.1)
+### 🚀 Advanced Features (v4.0)
 
-#### **Product Number/SKU Extraction** (NEW! 🆕)
+#### **Smart Matcher v4.0** (NEW! 🆕)
+Revolutionary multi-factor weighted scoring system:
+
+**Scoring Breakdown (Total: 100 points)**
+- 🏢 **Brand Match (25 pts)**: Normalized brand comparison with alias support
+- 📱 **Model Match (30 pts)**: String similarity with token overlap analysis
+- 💾 **Specs Match (20 pts)**: Storage (8), RAM (8), Color (4)
+- 📝 **Title Similarity (15 pts)**: Token overlap (40%) + bigram overlap (60%)
+- 📦 **Category Match (10 pts)**: Strict category validation
+- 💰 **Price Bonus (0-5 pts)**: Same price range bonus, distant price penalty
+
+**Advanced Features:**
+- **Tokenization**: Stop word removal, special character handling
+- **N-Gram Analysis**: Bigrams & trigrams for phrase detection
+- **Semantic Similarity**: Jaccard coefficient for token overlap
+- **Levenshtein Distance**: String edit distance for model matching
+- **Keyword Extraction**: Auto-detects brand names, model numbers, specs
+- **Price-Aware**: Bonus for similar prices, penalty for cross-price-range matches
+
+**Confidence Levels:**
+- 🎯 **90-100: EXACT** - Same product, perfect match
+- ⭐ **80-89: HIGH** - Very similar variant (same model, different specs)
+- ✓ **70-79: MEDIUM** - Same product line, related
+- **<70: Filtered out** - Too dissimilar
+
+**Benefits:**
+- � **Higher Accuracy**: Multi-factor validation vs single algorithm
+- 🧠 **Smarter Matching**: Understands context, not just keywords
+- 📊 **Transparent Scoring**: See why each match scored its confidence
+- 🚫 **No False Positives**: Laptop searches never show phones (strict category blocking)
+
+#### **Product Number/SKU Extraction**
 Automatically detects and prioritizes:
 - **ASIN** (Amazon codes)
 - **Apple Part Numbers** (e.g., MK2L3HN/A)
@@ -53,7 +85,7 @@ Benefits:
 - ⚡ **40-50% faster** search
 - 🔍 **95-98% accuracy** (up from 85-90%)
 
-#### **Availability Detection** (NEW! 🆕)
+#### **Availability Detection**
 Automatically filters out:
 - ❌ Out of stock items
 - ❌ "Notify me" listings
@@ -67,8 +99,8 @@ Benefits:
 
 #### **Enhanced Search Strategy**
 Now with 7+ query strategies (product number first!):
-  0. **Pure Product Number** (highest priority - NEW!)
-  1. **Brand + Product Number** (NEW!)
+  0. **Pure Product Number** (highest priority)
+  1. **Brand + Product Number**
   2. Brand + Model + Storage
   3. Brand + Model + RAM
   4. Brand + Model
@@ -86,19 +118,21 @@ Now with 7+ query strategies (product number first!):
 
 ---
 
-## 🆕 What's New in v3.1
+## 🆕 What's New in v4.0
 
 ### Major Improvements
 
-#### 1. **Advanced Product Listing Technology** 🎯
-- **Product Number Priority**: Automatically extracts SKU, ASIN, model numbers
-- **99% Confidence Matching**: Product numbers ensure exact matches
-- **7+ Identifier Types**: ASIN, SKU, part numbers, model codes
-- **40-50% Faster**: Early exit on product number match
+#### 1. **Smart Matcher v4.0** 🧠
+- **Multi-Factor Scoring**: 5 weighted dimensions (Brand, Model, Specs, Title, Category)
+- **Semantic Analysis**: Token-based with n-gram phrase detection
+- **Intelligent Scoring**: Levenshtein distance + Jaccard similarity
+- **Transparent Debugging**: See exact score breakdown for each match
+- **Price-Aware Matching**: Bonus/penalty based on price proximity
 
-#### 2. **Availability Filtering** 🛒
-- **Only In-Stock Products**: Filters out unavailable items automatically
-- **Real-Time Detection**: Checks for "out of stock", "notify me", etc.
+#### 2. **Advanced Tokenization** �
+- **Stop Word Removal**: Filters "the", "a", "and", etc.
+- **N-Gram Analysis**: Detects 2-word and 3-word phrases
+- **Keyword Extraction**: Auto-identifies brand names, model numbers, specs
 - **Limited Stock Badges**: Shows ⚡LIMITED warning for low inventory
 - **Cleaner Results**: 15-20% fewer products, 100% buyable
 

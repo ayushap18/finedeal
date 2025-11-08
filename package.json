@@ -1,7 +1,7 @@
 {
   "name": "finedeal",
-  "version": "3.1.1",
-  "description": "Advanced price comparison browser extension with product number matching and availability filtering",
+  "version": "4.0.0",
+  "description": "Smart Matcher v4.0 with multi-factor weighted scoring and semantic analysis",
   "author": "FineDeal Team",
   "license": "MIT",
   "scripts": {
