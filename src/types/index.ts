@@ -12,6 +12,9 @@ export interface Product {
   brand: string;
   category: string;
   attributes?: ProductAttributes;
+  productNumber?: string; // SKU, model number, or part number
+  sku?: string; // Specific SKU code
+  availability?: 'in-stock' | 'out-of-stock' | 'limited-stock' | 'unknown';
 }
 
 export interface ProductAttributes {

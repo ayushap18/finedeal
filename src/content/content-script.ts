@@ -1,6 +1,8 @@
 import { Product, ScrapedProduct, ChromeMessage } from '@/types';
 import { getSiteFromHostname, SITE_CONFIGS } from '@/config/sites';
 import { parsePrice, extractBrand, detectCategory } from '@/utils/product';
+import { extractProductNumbers } from '@/utils/product-number-extractor';
+import { isProductAvailable, checkAvailability } from '@/utils/availability-checker';
 import logger from '@/utils/logger';
 
 /**
@@ -198,6 +200,21 @@ function extractProductInfo(site: string): Product {
     ? getElementText(config.selectors.productPage.brand)
     : '';
 
+  // ADVANCED: Extract product number (SKU, model, part number)
+  const productNumberInfo = extractProductNumbers(title, productId, url);
+  
+  // ADVANCED: Check availability (look for "out of stock" indicators)
+  let availability: 'in-stock' | 'out-of-stock' | 'limited-stock' | 'unknown' = 'unknown';
+  const bodyText = document.body.textContent?.toLowerCase() || '';
+  
+  if (bodyText.includes('out of stock') || bodyText.includes('currently unavailable')) {
+    availability = 'out-of-stock';
+  } else if (bodyText.includes('in stock') || bodyText.includes('add to cart')) {
+    availability = 'in-stock';
+  } else if (bodyText.includes('only') && bodyText.includes('left')) {
+    availability = 'limited-stock';
+  }
+
   return {
     site,
     title,
@@ -208,11 +225,14 @@ function extractProductInfo(site: string): Product {
     productId,
     brand: brandText || extractBrand(title),
     category: detectCategory(title),
+    productNumber: productNumberInfo.productNumber || undefined,
+    sku: productNumberInfo.sku || undefined,
+    availability,
   };
 }
 
 /**
- * Scrape search results from page (OPTIMIZED for speed)
+ * Scrape search results from page (OPTIMIZED for speed + AVAILABILITY FILTERING)
  */
 function scrapeSearchResults(site: string): ScrapedProduct[] {
   const config = SITE_CONFIGS[site];
@@ -260,6 +280,13 @@ function scrapeSearchResults(site: string): ScrapedProduct[] {
         continue;
       }
 
+      // ADVANCED: Check availability before processing
+      const available = isProductAvailable(container, priceEl);
+      if (!available) {
+        logger.debug(`Skipping container ${index}: product not available`);
+        continue;
+      }
+
       const title = titleEl.textContent?.trim() || '';
       const priceText = priceEl.textContent?.trim() || '';
       
@@ -287,6 +314,12 @@ function scrapeSearchResults(site: string): ScrapedProduct[] {
           getAttributeValueFrom(container, config.selectors.searchPage.productId, 'data-id') || ''
         : '';
 
+      // ADVANCED: Extract product number from title and URL
+      const productNumberInfo = extractProductNumbers(title, productId, url);
+      
+      // ADVANCED: Get availability status
+      const availabilityInfo = checkAvailability(container);
+
       products.push({
         site,
         title,
@@ -297,6 +330,9 @@ function scrapeSearchResults(site: string): ScrapedProduct[] {
         productId,
         brand: extractBrand(title),
         category: detectCategory(title),
+        productNumber: productNumberInfo.productNumber || undefined,
+        sku: productNumberInfo.sku || undefined,
+        availability: availabilityInfo.status,
       });
     } catch (error) {
       logger.debug(`Error scraping product at index ${index}:`, error);

@@ -1,6 +1,7 @@
 import { Product, MatchResult, MatchLevel, ProductAttributes } from '@/types';
 import { extractModel, extractStorage, extractRAM, extractColor } from '@/utils/product';
 import { normalizeBrand, brandsMatch } from '@/utils/brand-normalization';
+import { productNumbersMatch } from '@/utils/product-number-extractor';
 import logger from '@/utils/logger';
 
 /**
@@ -8,11 +9,12 @@ import logger from '@/utils/logger';
  * Uses multiple algorithms: exact matching, fuzzy matching, ML-inspired scoring
  */
 export class ProductMatcher {
-  private readonly MIN_CONFIDENCE = 25; // Raised to filter out poor matches
+  private readonly MIN_CONFIDENCE = 60; // RAISED from 25 to 60 for stricter filtering
   private readonly ACCESSORY_KEYWORDS = [
     'case', 'cover', 'charger', 'cable', 'adapter', 'holder', 'stand',
     'protector', 'screen guard', 'tempered glass', 'skin', 'pouch',
     'sleeve', 'bag', 'strap', 'band', 'compatible', 'accessory',
+    'graphics card', 'gpu', 'graphic card', // Add GPU as accessory
   ];
 
   /**
@@ -50,6 +52,15 @@ export class ProductMatcher {
 
       // OPTIMIZATION 4: Match by levels (early exit on success)
       const matches: MatchResult[] = [];
+
+      // Level 0.5: Product Number/SKU matching (99% confidence) - NEW!
+      if (sourceProduct.productNumber) {
+        const productNumberMatches = this.findProductNumberMatches(sourceProduct, filtered);
+        if (productNumberMatches.length > 0) {
+          logger.info(`✅ Level 0.5: ${productNumberMatches.length} product number matches - EARLY EXIT`);
+          return this.sortAndLimit(productNumberMatches);
+        }
+      }
 
       // Level 1: Exact Product ID (100% confidence) - FAST
       if (sourceProduct.productId) {
@@ -109,6 +120,56 @@ export class ProductMatcher {
   }
 
   /**
+   * Level 0.5: Product Number/SKU matching (NEW!)
+   */
+  private findProductNumberMatches(source: Product, candidates: Product[]): MatchResult[] {
+    const matches: MatchResult[] = [];
+    
+    if (!source.productNumber) return matches;
+
+    // Create product number info for source
+    const sourceProductNumber = {
+      productNumber: source.productNumber || '',
+      modelNumber: source.productNumber || '',
+      partNumber: source.sku || '',
+      sku: source.sku || '',
+      asin: source.productId || '',
+      confidence: 100,
+      source: 'attribute' as const
+    };
+
+    for (const candidate of candidates) {
+      if (!candidate.productNumber && !candidate.sku && !candidate.productId) {
+        continue;
+      }
+
+      // Create product number info for candidate
+      const candidateProductNumber = {
+        productNumber: candidate.productNumber || '',
+        modelNumber: candidate.productNumber || '',
+        partNumber: candidate.sku || '',
+        sku: candidate.sku || '',
+        asin: candidate.productId || '',
+        confidence: 100,
+        source: 'attribute' as const
+      };
+
+      // Check if product numbers match
+      if (productNumbersMatch(sourceProductNumber, candidateProductNumber)) {
+        matches.push({
+          ...candidate,
+          confidence: 99,
+          matchLevel: MatchLevel.EXACT,
+          matchBadge: '🎯 EXACT',
+          matchReason: `Product Number: ${candidate.productNumber || candidate.sku}`,
+        });
+      }
+    }
+
+    return matches;
+  }
+
+  /**
    * Level 1: Exact Product ID matching
    */
   private findExactIdMatches(source: Product, candidates: Product[]): MatchResult[] {
@@ -136,9 +197,14 @@ export class ProductMatcher {
     if (!sourceAttrs.model) return matches;
 
     for (const candidate of candidates) {
+      // STRICT: Brand MUST match for Level 2
+      if (!this.compareBrands(sourceAttrs, this.extractAttributes(candidate))) {
+        continue;
+      }
+
       const candAttrs = this.extractAttributes(candidate);
 
-      // Very lenient - just need model match
+      // Model must match
       const modelsMatch = this.compareModels(sourceAttrs.model, candAttrs.model);
       
       if (modelsMatch) {
@@ -193,11 +259,15 @@ export class ProductMatcher {
     for (const candidate of candidates) {
       const candAttrs = this.extractAttributes(candidate);
 
-      // More lenient brand check
+      // STRICT: Brand MUST match for Level 3
       const brandsMatch = this.compareBrands(sourceAttrs, candAttrs);
+      if (!brandsMatch) {
+        continue; // Skip if brands don't match
+      }
+
       const modelsMatch = candAttrs.model && this.compareModels(sourceAttrs.model, candAttrs.model);
       
-      if (brandsMatch || modelsMatch) {
+      if (modelsMatch) {
         const similarity = this.calculateTextSimilarity(source.title, candidate.title);
         let confidence = Math.min(84, Math.max(70, Math.round(70 + similarity * 14)));
 
@@ -235,14 +305,19 @@ export class ProductMatcher {
     for (const candidate of candidates) {
       const candAttrs = this.extractAttributes(candidate);
 
+      // STRICT: Brand MUST match for fuzzy matching (don't mix brands!)
       const brandsMatch = this.compareBrands(sourceAttrs, candAttrs);
+      if (!brandsMatch) {
+        continue; // Skip if brands don't match
+      }
+
       const similarity = this.calculateTextSimilarity(source.title, candidate.title);
 
-      // ULTRA lenient - accept even 15% similarity OR any brand match OR common keywords
+      // STRICTER: Require 40% similarity (up from 15%) AND brand match
       const hasCommonKeywords = this.hasCommonKeywords(source.title, candidate.title);
       
-      if (similarity >= 0.15 || brandsMatch || hasCommonKeywords) {
-        let confidence = Math.min(69, Math.max(5, Math.round(5 + similarity * 64)));
+      if (similarity >= 0.40 || (brandsMatch && hasCommonKeywords && similarity >= 0.30)) {
+        let confidence = Math.min(69, Math.max(20, Math.round(20 + similarity * 49)));
 
         // FUZZY PRICE MATCHING: Boost confidence if price is similar (0.7-1.3x range)
         const priceRatio = candidate.numericPrice / source.numericPrice;
@@ -272,12 +347,27 @@ export class ProductMatcher {
    */
   private filterAccessories(source: Product, candidates: Product[]): Product[] {
     const sourceIsAccessory = this.isAccessory(source.title);
+    const sourceCategory = source.category;
 
-    // Be lenient - only filter obvious accessories
+    // Be lenient - only filter obvious accessories and wrong categories
     return candidates.filter((c) => {
       if (sourceIsAccessory) return true; // If source is accessory, show all accessories
       
       const isAccessory = this.isAccessory(c.title);
+      
+      // CATEGORY MISMATCH: Don't show laptops when looking for GPUs or vice versa
+      if (sourceCategory === 'electronics-laptop' && c.category === 'electronics-gpu') {
+        return false; // Don't show graphics cards for laptop searches
+      }
+      if (sourceCategory === 'electronics-gpu' && c.category === 'electronics-laptop') {
+        return false; // Don't show laptops for GPU searches
+      }
+      if (sourceCategory === 'electronics-phone' && c.category === 'electronics-laptop') {
+        return false; // Don't show laptops for phone searches
+      }
+      if (sourceCategory === 'electronics-laptop' && c.category === 'electronics-phone') {
+        return false; // Don't show phones for laptop searches
+      }
       
       // Don't filter if title has phone/laptop keywords even with accessory words
       if (/(phone|mobile|smartphone|laptop|tablet|watch|speaker)/i.test(c.title.toLowerCase())) {

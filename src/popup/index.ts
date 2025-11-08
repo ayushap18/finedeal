@@ -140,7 +140,13 @@ async function startComparison(product: Product) {
   resultsSection.innerHTML = '';
 
   // Generate multiple search queries with fallback strategies
-  const searchQueries = generateSearchQueries(product.title, product.brand);
+  const searchQueries = generateSearchQueries(
+    product.title, 
+    product.brand, 
+    product.productNumber, 
+    product.productId, 
+    product.url
+  );
 
   // Get competitor sites
   const allSites = getEnabledSites();
@@ -407,7 +413,17 @@ async function searchSite(
  * Display results
  */
 function displayResults(original: Product, matches: MatchResult[], hasSimilar: boolean = false) {
-  if (matches.length === 0) {
+  // ADVANCED: Filter out unavailable products
+  const availableMatches = matches.filter(m => m.availability !== 'out-of-stock');
+  
+  if (availableMatches.length < matches.length) {
+    logger.info(`Filtered out ${matches.length - availableMatches.length} out-of-stock products`);
+  }
+  
+  // Use available matches for display
+  const displayMatches = availableMatches.length > 0 ? availableMatches : matches;
+  
+  if (displayMatches.length === 0) {
     statsSection.classList.add('hidden');
     resultsSection.innerHTML = `
       <div class="no-results">
@@ -430,13 +446,13 @@ function displayResults(original: Product, matches: MatchResult[], hasSimilar: b
   }
 
   // Update stats dashboard
-  const cheapest = matches[0];
+  const cheapest = displayMatches[0];
   const { diff, percent, isCheaper } = calculatePriceDiff(
     original.numericPrice,
     cheapest.numericPrice
   );
   
-  const sitesFound = new Set(matches.map(m => m.site)).size;
+  const sitesFound = new Set(displayMatches.map(m => m.site)).size;
   
   statsSection.classList.remove('hidden');
   bestDealStat.textContent = SITE_CONFIGS[cheapest.site].name;
@@ -445,7 +461,7 @@ function displayResults(original: Product, matches: MatchResult[], hasSimilar: b
   sitesSearchedStat.textContent = `${sitesFound}/${getEnabledSites().length - 1}`;
 
   // Check if results are similar products (not exact matches)
-  const allSimilar = matches.every(m => m.matchLevel === 'SIMILAR');
+  const allSimilar = displayMatches.every(m => m.matchLevel === 'SIMILAR');
 
   let html = '';
 
@@ -473,7 +489,7 @@ function displayResults(original: Product, matches: MatchResult[], hasSimilar: b
   }
 
   // Product cards
-  matches.slice(0, 10).forEach((match) => {
+  displayMatches.slice(0, 10).forEach((match) => {
     const siteConfig = SITE_CONFIGS[match.site];
     const priceDiff = calculatePriceDiff(original.numericPrice, match.numericPrice);
     const isSimilar = match.matchLevel === 'SIMILAR';
@@ -481,6 +497,11 @@ function displayResults(original: Product, matches: MatchResult[], hasSimilar: b
     // PRICE VALIDATION: Check if price is suspicious
     const priceValidation = validatePrice(original.numericPrice, match.numericPrice);
     const showWarning = priceValidation.isSuspicious;
+    
+    // ADVANCED: Availability badge
+    const availabilityBadge = match.availability === 'limited-stock' 
+      ? '<span style="background: #FF9800; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">⚡ LIMITED</span>'
+      : '';
 
     html += `
       <div class="result-card ${match.numericPrice === cheapest.numericPrice && !allSimilar ? 'best-price' : ''}">
@@ -490,6 +511,7 @@ function displayResults(original: Product, matches: MatchResult[], hasSimilar: b
             <span class="site-badge ${siteConfig.badge}">${siteConfig.name}</span>
             ${match.numericPrice === cheapest.numericPrice && !allSimilar ? '<span class="best-badge">BEST PRICE</span>' : ''}
             ${isSimilar ? '<span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">🔗 SIMILAR</span>' : ''}
+            ${availabilityBadge}
             ${showWarning ? '<span style="background: #FFA500; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;" title="' + priceValidation.reason + '">⚠️ SUSPICIOUS</span>' : ''}
           </div>
           <h4 class="result-title">${truncate(match.title, 80)}</h4>

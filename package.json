@@ -1,7 +1,7 @@
 {
   "name": "finedeal",
-  "version": "1.0.0",
-  "description": "Production-level price comparison browser extension with AI-powered matching",
+  "version": "3.1.1",
+  "description": "Advanced price comparison browser extension with product number matching and availability filtering",
   "author": "FineDeal Team",
   "license": "MIT",
   "scripts": {
@@ -16,7 +16,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "package": "npm run build && cd dist && zip -r ../finedeal-v1.0.0.zip .",
+    "package": "npm run build && cd dist && zip -r ../finedeal-v3.1.0.zip .",
     "analyze": "webpack-bundle-analyzer dist/stats.json"
   },
   "devDependencies": {

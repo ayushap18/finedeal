@@ -84,6 +84,21 @@ export function extractModel(title: string): string {
     /(pixel\s+\d+[a-z]*(?:\s+pro)?(?:\s+xl)?)/i,
     // Redmi/Mi
     /((?:redmi|mi)\s+\d+[a-z]*(?:\s+pro)?)/i,
+    
+    // LAPTOP MODELS (NEW!)
+    // Acer laptops (Nitro 5, Nitro V 15, Aspire 5, Predator Helios 300)
+    /(nitro\s+(?:v\s+)?\d+|aspire\s+\d+|predator\s+\w+\s+\d+|swift\s+\d+)/i,
+    // ASUS laptops (TUF F15, ROG Strix G15, VivoBook 15)
+    /(tuf\s+[a-z]\d+|rog\s+\w+\s+[a-z]?\d+|vivobook\s+\d+|zenbook\s+\d+)/i,
+    // HP laptops (Pavilion 15, Omen 15, Victus 15)
+    /(pavilion\s+\d+|omen\s+\d+|victus\s+\d+|envy\s+\d+)/i,
+    // Dell laptops (XPS 15, G15, Inspiron 15)
+    /(xps\s+\d+|g\d+|inspiron\s+\d+|vostro\s+\d+|latitude\s+\d+)/i,
+    // Lenovo laptops (LOQ 15, IdeaPad Gaming 3, ThinkPad X1)
+    /(loq\s+\d+|ideapad\s+(?:gaming\s+)?\d+|thinkpad\s+[a-z]\d+|legion\s+\d+)/i,
+    // MSI laptops (GF63, Katana 15)
+    /(gf\d+|katana\s+\d+|bravo\s+\d+|pulse\s+\d+)/i,
+    
     // Generic model numbers (fallback)
     /\b([a-z]{1,3}\d{2,4}[a-z]?)\b/i,
   ];
@@ -141,11 +156,20 @@ export function detectCategory(title: string): string {
   const titleLower = title.toLowerCase();
 
   if (/(phone|mobile|smartphone|iphone|galaxy)/i.test(titleLower)) {
-    return 'electronics';
+    return 'electronics-phone';
   }
 
-  if (/(laptop|notebook|macbook|computer)/i.test(titleLower)) {
-    return 'electronics';
+  if (/(laptop|notebook|macbook|computer|gaming laptop)/i.test(titleLower)) {
+    return 'electronics-laptop';
+  }
+
+  // Graphics cards are accessories/components, NOT laptops
+  if (/(graphics card|gpu|geforce|radeon|video card)/i.test(titleLower)) {
+    return 'electronics-gpu';
+  }
+
+  if (/(tablet|ipad)/i.test(titleLower)) {
+    return 'electronics-tablet';
   }
 
   if (/(shirt|jeans|dress|trouser|shoe|sneaker|jacket|hoodie|kurta|saree)/i.test(titleLower)) {
@@ -161,9 +185,63 @@ export function detectCategory(title: string): string {
 
 /**
  * Generate multiple search queries with fallback strategies (Google Shopping style)
+ * NOW WITH PRODUCT NUMBER PRIORITY!
  */
-export function generateSearchQueries(title: string, brand?: string): string[] {
+export function generateSearchQueries(title: string, brand?: string, productNumber?: string, productId?: string, url?: string): string[] {
   const queries: string[] = [];
+  
+  // STRATEGY 0: Pure Product Number (HIGHEST PRIORITY - NEW!)
+  // Import product number extractor dynamically
+  if (productNumber) {
+    // Pure product number search (most accurate)
+    queries.push(productNumber);
+    
+    // Brand + Product number
+    if (brand) {
+      queries.push(`${brand} ${productNumber}`.trim());
+    }
+  } else {
+    // Try to extract product number from title/URL
+    const productNumberPatterns = [
+      // Apple part numbers (e.g., MK2L3HN/A)
+      /\b([A-Z]{2}\d{2,3}[A-Z0-9]{2}\/[A-Z])\b/,
+      // Samsung model numbers (e.g., SM-G991B)
+      /\bSM-([A-Z]\d{3,4}[A-Z]?)\b/,
+      // SKU codes
+      /\bSKU[-:\s]?([A-Z0-9]{5,10})\b/i,
+      // Generic alphanumeric codes
+      /\b([A-Z]{2,4}[-]?\d{4,6}[A-Z0-9]?)\b/,
+    ];
+    
+    for (const pattern of productNumberPatterns) {
+      const match = title.match(pattern);
+      if (match) {
+        const extractedNumber = match[1] || match[0];
+        queries.push(extractedNumber);
+        if (brand) {
+          queries.push(`${brand} ${extractedNumber}`.trim());
+        }
+        break; // Use first found product number
+      }
+    }
+    
+    // Try ASIN from URL
+    if (url) {
+      const asinMatch = url.match(/\/dp\/([A-Z0-9]{10})|asin=([A-Z0-9]{10})/i);
+      if (asinMatch) {
+        const asin = asinMatch[1] || asinMatch[2];
+        queries.push(asin);
+      }
+    }
+    
+    // Try productId if it looks like a valid SKU (not just a hash)
+    if (productId && /^[A-Z0-9]{6,15}$/i.test(productId)) {
+      queries.push(productId);
+      if (brand) {
+        queries.push(`${brand} ${productId}`.trim());
+      }
+    }
+  }
   
   // Clean title
   let cleanTitle = title
@@ -226,7 +304,7 @@ export function generateSearchQueries(title: string, brand?: string): string[] {
   }
 
   // Remove duplicates and too short queries
-  return [...new Set(queries)].filter(q => q.length >= 5 && q.length <= 60);
+  return [...new Set(queries)].filter(q => q.length >= 3 && q.length <= 60);
 }
 
 /**
