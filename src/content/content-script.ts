@@ -122,6 +122,7 @@ async function handleWaitForPageReady(sendResponse: (response: { ready: boolean 
  */
 function handleGetProductInfo(sendResponse: (response: Product) => void) {
   try {
+
     const hostname = window.location.hostname;
     const site = getSiteFromHostname(hostname);
 
@@ -142,6 +143,7 @@ function handleGetProductInfo(sendResponse: (response: Product) => void) {
 
     const product = extractProductInfo(site);
     logger.info('Product extracted:', product.title);
+
 
     // --- PRODUCTION-READY Price Drop Notification (Flipkart & Amazon only, using chrome.notifications) ---
     if ((site === 'flipkart' || site === 'amazon') && product.productId && product.numericPrice > 0) {
