@@ -1,0 +1,15 @@
+{
+  "name": "finedeal-backend",
+  "version": "1.0.0",
+  "description": "Backend for FineDeal price drop email notifications.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.8",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  }
+}
