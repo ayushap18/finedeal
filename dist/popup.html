@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FineDeal - Price Comparison</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>
+        <span class="header-icon">💰</span>
+        FineDeal
+      </h1>
+      <p class="subtitle">Smart Price Comparison</p>
+    </header>
+
+    <!-- Current Product Section -->
+    <section id="current-product" class="product-section">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Analyzing product...</p>
+      </div>
+      </section>
+      <div id="notification-toggle" class="notification-toggle">
+        <span class="notify-label">
+          <svg class="bell-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C7.23858 2 5 4.23858 5 7V9.586C5 10.114 4.78929 10.6172 4.41421 11L3.29289 12.1213C2.90237 12.5118 3.17707 13.1716 3.70711 13.1716H16.2929C16.8229 13.1716 17.0976 12.5118 16.7071 12.1213L15.5858 11C15.2107 10.6172 15 10.114 15 9.586V7C15 4.23858 12.7614 2 10 2Z" stroke="#4caf50" stroke-width="1.5"/><path d="M8 15C8 16.1046 8.89543 17 10 17C11.1046 17 12 16.1046 12 15" stroke="#4caf50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="notify-text">Price Drop Notification</span>
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="notify-switch" />
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+    <!-- Compare Button -->
+    <button id="compare-btn" class="btn-primary" disabled>
+      <span class="btn-icon">🔍</span>
+      Compare Prices
+    </button>
+
+    <!-- Quick Stats (shown after comparison) -->
+    <div id="stats-section" class="stats-section hidden">
+      <div class="stat-card">
+        <div class="stat-value" id="best-deal">-</div>
+        <div class="stat-label">Best Deal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-savings">-</div>
+        <div class="stat-label">You Save</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sites-searched">-</div>
+        <div class="stat-label">Sites Checked</div>
+      </div>
+    </div>
+    <div class="notify-explanation">
+      <span class="notify-explanation-text">
+        When enabled, you’ll get a notification if the price of this product drops the next time you visit this page.
+      </span>
+    </div>
+
+    <!-- Progress Section -->
+    <div id="progress-section" class="progress-section hidden">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p id="progress-text" class="progress-text">Searching...</p>
+    </div>
+
+    <!-- Results Section -->
+    <section id="results-section" class="results-section">
+      <!-- Results will be inserted here -->
+    </section>
+
+    <!-- Footer with Clear Cache -->
+    <footer class="footer">
+      <button id="clear-cache-btn" class="btn-clear-cache" title="Clear cached results">
+        🗑️ Clear Cache
+      </button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
