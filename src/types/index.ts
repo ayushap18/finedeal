@@ -160,7 +160,8 @@ export type MessageType =
   | 'START_COMPARISON'
   | 'UPDATE_PROGRESS'
   | 'COMPARISON_COMPLETE'
-  | 'ERROR';
+  | 'ERROR'
+  | 'SHOW_PRICE_DROP_NOTIFICATION';
 
 export interface ChromeMessage<T = any> {
   type: MessageType;

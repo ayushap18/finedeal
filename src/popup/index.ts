@@ -1,3 +1,9 @@
+// Fix for window['injectProductInfo'] type
+declare global {
+  interface Window {
+    injectProductInfo?: (product: any) => void;
+  }
+}
 import './popup.css';
 import { Product, MatchResult, ChromeMessage } from '@/types';
 import { SITE_CONFIGS, getEnabledSites } from '@/config/sites';
@@ -30,6 +36,41 @@ const sitesSearchedStat = document.getElementById('sites-searched') as HTMLDivEl
 let currentProduct: Product | null = null;
 let isComparing = false;
 
+// --- Price Drop Notification Toggle Logic ---
+const notifySwitch = document.getElementById('notify-switch') as HTMLInputElement | null;
+let currentProductId = '';
+let currentSite = '';
+
+function getNotifyKey(site: string, productId: string) {
+  return `notify_enabled_${site}_${productId}`;
+}
+
+function setNotifySwitchState(site: string, productId: string) {
+  if (!notifySwitch) return;
+  const key = getNotifyKey(site, productId);
+  const enabled = localStorage.getItem(key) === 'true';
+  notifySwitch.checked = enabled;
+}
+
+if (notifySwitch) {
+  notifySwitch.addEventListener('change', () => {
+    if (!currentProductId || !currentSite) return;
+    const key = getNotifyKey(currentSite, currentProductId);
+    localStorage.setItem(key, notifySwitch.checked ? 'true' : 'false');
+  });
+}
+
+// Patch product info injection to set toggle state
+function patchProductInfoInjection() {
+  const orig = window['injectProductInfo'];
+  window['injectProductInfo'] = function(product: any) {
+    currentProductId = product.productId;
+    currentSite = product.site;
+    setNotifySwitchState(product.site, product.productId);
+    if (orig) orig(product);
+  };
+}
+patchProductInfoInjection();
 /**
  * Initialize popup
  */

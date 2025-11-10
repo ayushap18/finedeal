@@ -52,11 +52,19 @@ chrome.runtime.onMessage.addListener((
     case 'START_COMPARISON':
       handleStartComparison(sender.tab?.id, request.data);
       break;
-      
+    case 'SHOW_PRICE_DROP_NOTIFICATION':
+      if (request.data) {
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: request.data.iconUrl,
+          title: request.data.title,
+          message: request.data.message
+        });
+      }
+      break;
     default:
       logger.warn('Unknown message type:', request.type);
   }
-
   return true;
 });
 

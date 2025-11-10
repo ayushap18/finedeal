@@ -142,6 +142,39 @@ function handleGetProductInfo(sendResponse: (response: Product) => void) {
 
     const product = extractProductInfo(site);
     logger.info('Product extracted:', product.title);
+
+    // --- PRODUCTION-READY Price Drop Notification (Flipkart & Amazon only, using chrome.notifications) ---
+    if ((site === 'flipkart' || site === 'amazon') && product.productId && product.numericPrice > 0) {
+      try {
+        const key = `last_price_${site}_${product.productId}`;
+        const last = localStorage.getItem(key);
+        const lastPrice = last ? parseFloat(last) : null;
+        // Avoid spamming: only notify if price drops and not already notified for this price
+        const notifiedKey = `notified_price_${site}_${product.productId}`;
+        const lastNotified = localStorage.getItem(notifiedKey);
+        const alreadyNotified = lastNotified && parseFloat(lastNotified) === product.numericPrice;
+        // Check if notification is enabled for this product
+        const notifyKey = `notify_enabled_${site}_${product.productId}`;
+        const notifyEnabled = localStorage.getItem(notifyKey) === 'true';
+        if (notifyEnabled && lastPrice !== null && product.numericPrice < lastPrice && !alreadyNotified) {
+          // Send notification request to background script
+          chrome.runtime.sendMessage({
+            type: 'SHOW_PRICE_DROP_NOTIFICATION',
+            data: {
+              title: 'Price Drop Alert!',
+              message: `${product.title.substring(0, 60)}\nPrice dropped from ₹${lastPrice} to ₹${product.numericPrice}`,
+              iconUrl: product.image || chrome.runtime.getURL('assets/icon-128.png')
+            }
+          });
+          localStorage.setItem(notifiedKey, String(product.numericPrice));
+        }
+        // Always update last price
+        localStorage.setItem(key, String(product.numericPrice));
+      } catch (e) {
+        logger.warn('Price drop notification error:', e);
+      }
+    }
+
     sendResponse(product);
   } catch (error) {
     logger.error('Error extracting product info:', error);
